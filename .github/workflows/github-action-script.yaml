@@ -64,8 +64,7 @@ jobs:
               "role": "user",
               "content": "Explain the importance of fast language models"
           }]
-          }' \
-          > -o docker.json
+          }' -o docker.json
     
     - name: Read docker.json and extract Dockerfile
       run: |
