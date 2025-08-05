@@ -10,8 +10,15 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
+    - name: Where Am I
+      run: pwd
+      
+    - name: list files
+      run: ls -lrth
+      
     - name: Detect Framework via find
       run: |
+        ls -lrth
         if FIND_PATH=$(find . -name "pom.xml" -o -name "build.gradle") && find . -path "./src/main/java" | grep -q .; then
           echo "FRAMEWORK=Java Spring Boot" >> $GITHUB_ENV
           echo "PORT=8080" >> $GITHUB_ENV
