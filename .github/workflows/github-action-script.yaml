@@ -21,8 +21,7 @@ jobs:
       
     - name: Detect Framework via find
       run: |
-        FIND_PATH=$(find . -name "pom.xml" -print -quit) && [ -n "$FIND_PATH" ]; then
-        if [ -n "$FIND_PATH" ] && find . -path "./src/main/java" | grep -q .; then
+        if FIND_PATH=$(find . -name "pom.xml" -print -quit) && [ -n "$FIND_PATH" ]; then
           echo "FRAMEWORK=Java Spring Boot" >> $GITHUB_ENV
           echo "PORT=8080" >> $GITHUB_ENV
           echo "ENTRY_PATH=$FIND_PATH" >> $GITHUB_ENV
