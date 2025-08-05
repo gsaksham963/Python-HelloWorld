@@ -80,7 +80,7 @@ jobs:
     - name: Read docker.json and extract Dockerfile
       run: |
         # Step 2: Extract Dockerfile from response
-        jq -r '.choices[0].message.content' docker_response.json | \
+        jq -r '.choices[0].message.content' docker.json | \
           sed -n '/```dockerfile/,/```/p' | \
           sed '1d;$d' > Dockerfile
         echo "Extracted Dockerfile:"
