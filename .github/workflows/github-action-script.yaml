@@ -58,20 +58,21 @@ jobs:
         echo "{\"request\": \"Generate a Dockerfile only\", \"framework\": \"$FRAMEWORK\", \"port\": $PORT, \"entry_path\": \"$ENTRY_PATH\"}" > docker_prompt.json
         cat docker_prompt.json
     
-    - name: Generate Files with Copilot or Groq(for testing)
+    - name: Generate Files with Copilot or Groq (from file prompt)
       env:
         API_KEY: ${{ secrets.API_KEY }}
       run: |
+        PROMPT=$(cat docker_prompt.json | jq -Rs .)  # Read and escape as JSON string
+        jq -n --arg prompt "$PROMPT" '{
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          messages: [{role: "user", content: $prompt}]
+        }' > payload.json
+    
         curl https://api.groq.com/openai/v1/chat/completions -s \
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer $API_KEY" \
-          -d '{
-          "model": "meta-llama/llama-4-scout-17b-16e-instruct",
-          "messages": [{
-              "role": "user",
-              "content": "Explain the importance of fast language models"
-          }]
-          }' -o docker.json
+          -d @payload.json \
+          -o docker.json
     
     - name: Read docker.json and extract Dockerfile
       run: |
