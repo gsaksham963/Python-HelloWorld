@@ -18,32 +18,32 @@ jobs:
       
     - name: Detect Framework via find
       run: |
-        ls -lrth
-        if FIND_PATH=$(find . -name "pom.xml" -o -name "build.gradle") && find . -path "./src/main/java" | grep -q .; then
+        FIND_PATH=$(find . -name "pom.xml" -o -name "build.gradle" -print -quit)
+        if [ -n "$FIND_PATH" ] && find . -path "./src/main/java" | grep -q .; then
           echo "FRAMEWORK=Java Spring Boot" >> $GITHUB_ENV
           echo "PORT=8080" >> $GITHUB_ENV
           echo "ENTRY_PATH=$FIND_PATH" >> $GITHUB_ENV
-        elif FIND_PATH=$(find . -name "package.json"); then
+        elif FIND_PATH=$(find . -name "package.json" -print -quit) && [ -n "$FIND_PATH" ]; then
           echo "FRAMEWORK=Node.js" >> $GITHUB_ENV
           echo "PORT=3000" >> $GITHUB_ENV
           echo "ENTRY_PATH=$FIND_PATH" >> $GITHUB_ENV
-        elif FIND_PATH=$(find . -name "angular.json"); then
+        elif FIND_PATH=$(find . -name "angular.json" -print -quit) && [ -n "$FIND_PATH" ]; then
           echo "FRAMEWORK=Angular" >> $GITHUB_ENV
           echo "PORT=4200" >> $GITHUB_ENV
           echo "ENTRY_PATH=$FIND_PATH" >> $GITHUB_ENV
-        elif FIND_PATH=$(find . -name "vue.config.js"); then
+        elif FIND_PATH=$(find . -name "vue.config.js" -print -quit) && [ -n "$FIND_PATH" ]; then
           echo "FRAMEWORK=Vue.js" >> $GITHUB_ENV
           echo "PORT=8080" >> $GITHUB_ENV
           echo "ENTRY_PATH=$FIND_PATH" >> $GITHUB_ENV
-        elif FIND_PATH=$(find . -name "manage.py"); then
+        elif FIND_PATH=$(find . -name "manage.py" -print -quit) && [ -n "$FIND_PATH" ]; then
           echo "FRAMEWORK=Django" >> $GITHUB_ENV
           echo "PORT=8000" >> $GITHUB_ENV
           echo "ENTRY_PATH=$FIND_PATH" >> $GITHUB_ENV
-        elif FIND_PATH=$(find . -name "app.py"); then
+        elif FIND_PATH=$(find . -name "app.py" -print -quit) && [ -n "$FIND_PATH" ]; then
           echo "FRAMEWORK=Flask" >> $GITHUB_ENV
           echo "PORT=5000" >> $GITHUB_ENV
           echo "ENTRY_PATH=$FIND_PATH" >> $GITHUB_ENV
-        elif FIND_PATH=$(find . -name "main.go"); then
+        elif FIND_PATH=$(find . -name "main.go" -print -quit) && [ -n "$FIND_PATH" ]; then
           echo "FRAMEWORK=Go" >> $GITHUB_ENV
           echo "PORT=8080" >> $GITHUB_ENV
           echo "ENTRY_PATH=$FIND_PATH" >> $GITHUB_ENV
