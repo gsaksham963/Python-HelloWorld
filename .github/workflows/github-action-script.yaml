@@ -79,10 +79,10 @@ jobs:
       
     - name: Read docker.json and extract Dockerfile
       run: |
-        # Extract first Dockerfile code block using jq and grep
-        jq -r '.choices[0].message.content' docker.json |
-          awk '/```Dockerfile/{flag=1;next}/```/{flag=0}flag' > Dockerfile
-
+        # Step 2: Extract Dockerfile from response
+        jq -r '.choices[0].message.content' docker_response.json | \
+          sed -n '/```dockerfile/,/```/p' | \
+          sed '1d;$d' > Dockerfile
         echo "Extracted Dockerfile:"
         cat Dockerfile
 
