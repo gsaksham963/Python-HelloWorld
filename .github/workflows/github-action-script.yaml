@@ -6,6 +6,9 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
+    env:
+      USE_GENERATIVE: ${{ github.event.inputs.use_generative }}
+
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -18,7 +21,7 @@ jobs:
       
     - name: Detect Framework via find
       run: |
-        FIND_PATH=$(find . -name "pom.xml" -o -name "build.gradle" -print -quit)
+        FIND_PATH=$(find . -name "pom.xml" -print -quit) && [ -n "$FIND_PATH" ]; then
         if [ -n "$FIND_PATH" ] && find . -path "./src/main/java" | grep -q .; then
           echo "FRAMEWORK=Java Spring Boot" >> $GITHUB_ENV
           echo "PORT=8080" >> $GITHUB_ENV
@@ -59,6 +62,7 @@ jobs:
         cat docker_prompt.json
     
     - name: Generate Files with Copilot or Groq (from file prompt)
+      if: env.USE_GENERATIVE == 'true'
       env:
         API_KEY: ${{ secrets.API_KEY }}
       run: |
@@ -75,9 +79,13 @@ jobs:
           -o docker.json
 
     - name: print docker file
-      run: cat docker.json
+      if: env.USE_GENERATIVE == 'true'
+      run: |
+        echo "Response from Groq API:"
+        cat docker.json
       
     - name: Read docker.json and extract Dockerfile
+      if: env.USE_GENERATIVE == 'true'
       run: |
         # Step 2: Extract Dockerfile from response
         jq -r '.choices[0].message.content' docker.json | \
@@ -85,6 +93,21 @@ jobs:
           sed '1d;$d' > Dockerfile
         echo "Extracted Dockerfile:"
         cat Dockerfile
+    
+    - name: Use Predefined Dockerfile Template
+      if: env.USE_GENERATIVE == 'false'
+      run: |
+        case "$FRAMEWORK" in
+          "Java Spring Boot") cp .docker-templates/springboot.Dockerfile Dockerfile ;;
+          "Node.js") cp .docker-templates/node.Dockerfile Dockerfile ;;
+          "Angular") cp .docker-templates/angular.Dockerfile Dockerfile ;;
+          "Vue.js") cp .docker-templates/vue.Dockerfile Dockerfile ;;
+          "Django") cp .docker-templates/django.Dockerfile Dockerfile ;;
+          "Flask") cp .docker-templates/flask.Dockerfile Dockerfile ;;
+          "Go") cp .docker-templates/go.Dockerfile Dockerfile ;;
+          ".NET") cp .docker-templates/dotnet.Dockerfile Dockerfile ;;
+          *) echo "Unknown framework. Cannot select template." && exit 1 ;;
+        esac
 
     - name: Check if Dockerfile exists
       run: | 
