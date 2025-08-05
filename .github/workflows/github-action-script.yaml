@@ -1,6 +1,12 @@
 name: Self Service Deployment
 
-on: [push]
+on:
+  workflow_dispatch:
+    inputs:
+      use_generative:
+        description: 'Use Generative AI for Dockerfile'
+        required: true
+        default: 'true'
 
 jobs:
   build-and-deploy:
