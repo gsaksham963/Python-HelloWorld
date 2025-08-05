@@ -73,7 +73,10 @@ jobs:
           -H "Authorization: Bearer $API_KEY" \
           -d @payload.json \
           -o docker.json
-    
+
+    - name: print docker file
+      run: cat docker.json
+      
     - name: Read docker.json and extract Dockerfile
       run: |
         # Extract first Dockerfile code block using jq and grep
