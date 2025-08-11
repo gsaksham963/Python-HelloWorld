@@ -112,11 +112,13 @@ jobs:
           sed -n '/```dockerfile/,/```/p' | \
           sed '1d;$d' > Dockerfile
         echo "Extracted Dockerfile:"
-        cat Dockerfile
 
     - name: Final Check for Dockerfile
       run: |
         if [ ! -f Dockerfile ]; then
           echo "Dockerfile not found. Exiting."
           exit 1
+        else 
+          echo "Final Dockerfile content:"
+          cat Dockerfile
         fi
