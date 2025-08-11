@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       use_generative:
-        description: 'Use Generative AI for Dockerfile'
+        description: 'Use Generative AI for Dockerfile (fallback only)'
         required: true
         default: 'true'
 
@@ -16,15 +16,13 @@ jobs:
       USE_GENERATIVE: ${{ github.event.inputs.use_generative }}
 
     steps:
-    - name: Checkout Code
+    - name: Checkout Current Repo
       uses: actions/checkout@v3
 
-    - name: Where Am I
-      run: pwd
-      
-    - name: list files
-      run: ls -lrth
-      
+    - name: Clone Docker Templates Repo
+      run: |
+        git clone https://github.com/gsaksham963/docker-templates.git docker-templates
+
     - name: Detect Framework via find
       run: |
         if FIND_PATH=$(find . -name "pom.xml" -print -quit) && [ -n "$FIND_PATH" ]; then
@@ -61,61 +59,63 @@ jobs:
           echo "ENTRY_PATH=." >> $GITHUB_ENV
         fi
 
+    - name: Try Using Predefined Dockerfile Template
+      id: template_check
+      run: |
+        case "$FRAMEWORK" in
+          "Java Spring Boot") TEMPLATE="docker-templates/springboot.Dockerfile" ;;
+          "Node.js") TEMPLATE="docker-templates/node.Dockerfile" ;;
+          "Angular") TEMPLATE="docker-templates/angular.Dockerfile" ;;
+          "Vue.js") TEMPLATE="docker-templates/vue.Dockerfile" ;;
+          "Django") TEMPLATE="docker-templates/django.Dockerfile" ;;
+          "Flask") TEMPLATE="docker-templates/flask.Dockerfile" ;;
+          "Go") TEMPLATE="docker-templates/go.Dockerfile" ;;
+          ".NET") TEMPLATE="docker-templates/dotnet.Dockerfile" ;;
+          *) TEMPLATE="" ;;
+        esac
+
+        if [ -n "$TEMPLATE" ] && [ -f "$TEMPLATE" ]; then
+          cp "$TEMPLATE" Dockerfile
+          echo "TEMPLATE_FOUND=true" >> $GITHUB_ENV
+          cat Dockerfile
+        else
+          echo "TEMPLATE_FOUND=false" >> $GITHUB_ENV
+        fi
+
     - name: Package Framework Metadata
+      if: env.TEMPLATE_FOUND == 'false' && env.USE_GENERATIVE == 'true'
       run: |
         echo "{\"request\": \"Generate a Dockerfile only\", \"framework\": \"$FRAMEWORK\", \"port\": $PORT, \"entry_path\": \"$ENTRY_PATH\"}" > docker_prompt.json
         cat docker_prompt.json
-    
-    - name: Generate Files with Copilot or Groq (from file prompt)
-      if: env.USE_GENERATIVE == 'true'
+
+    - name: Generate Dockerfile with Groq API
+      if: env.TEMPLATE_FOUND == 'false' && env.USE_GENERATIVE == 'true'
       env:
         API_KEY: ${{ secrets.API_KEY }}
       run: |
-        PROMPT=$(cat docker_prompt.json | jq -Rs .)  # Read and escape as JSON string
+        PROMPT=$(cat docker_prompt.json | jq -Rs .)
         jq -n --arg prompt "$PROMPT" '{
           model: "meta-llama/llama-4-scout-17b-16e-instruct",
           messages: [{role: "user", content: $prompt}]
         }' > payload.json
-    
+
         curl https://api.groq.com/openai/v1/chat/completions -s \
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer $API_KEY" \
           -d @payload.json \
           -o docker.json
 
-    - name: print docker file
-      if: env.USE_GENERATIVE == 'true'
+    - name: Extract Dockerfile from Groq Response
+      if: env.TEMPLATE_FOUND == 'false' && env.USE_GENERATIVE == 'true'
       run: |
-        echo "Response from Groq API:"
-        cat docker.json
-      
-    - name: Read docker.json and extract Dockerfile
-      if: env.USE_GENERATIVE == 'true'
-      run: |
-        # Step 2: Extract Dockerfile from response
         jq -r '.choices[0].message.content' docker.json | \
           sed -n '/```dockerfile/,/```/p' | \
           sed '1d;$d' > Dockerfile
         echo "Extracted Dockerfile:"
         cat Dockerfile
-    
-    - name: Use Predefined Dockerfile Template
-      if: env.USE_GENERATIVE == 'false'
-      run: |
-        case "$FRAMEWORK" in
-          "Java Spring Boot") cp .docker-templates/springboot.Dockerfile Dockerfile ;;
-          "Node.js") cp .docker-templates/node.Dockerfile Dockerfile ;;
-          "Angular") cp .docker-templates/angular.Dockerfile Dockerfile ;;
-          "Vue.js") cp .docker-templates/vue.Dockerfile Dockerfile ;;
-          "Django") cp .docker-templates/django.Dockerfile Dockerfile ;;
-          "Flask") cp .docker-templates/flask.Dockerfile Dockerfile ;;
-          "Go") cp .docker-templates/go.Dockerfile Dockerfile ;;
-          ".NET") cp .docker-templates/dotnet.Dockerfile Dockerfile ;;
-          *) echo "Unknown framework. Cannot select template." && exit 1 ;;
-        esac
 
-    - name: Check if Dockerfile exists
-      run: | 
+    - name: Final Check for Dockerfile
+      run: |
         if [ ! -f Dockerfile ]; then
           echo "Dockerfile not found. Exiting."
           exit 1
