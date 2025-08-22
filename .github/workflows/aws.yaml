@@ -1,0 +1,21 @@
+name: Deploy to AWS
+
+on: [push]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::355039310405:role/github_admin
+          aws-region: us-east-1
+
+      - name: Run AWS CLI command
+        run: aws s3 ls
