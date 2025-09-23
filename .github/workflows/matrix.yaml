@@ -1,4 +1,4 @@
-name: Deploy to AWS
+name: Practise
 
 on: [push]
 
@@ -19,3 +19,4 @@ jobs:
         run: |
           echo "OS: ${{matrix.os}}"
           echo "Node: ${{matrix.node}}"
+          echo "${{github.actor}}"
