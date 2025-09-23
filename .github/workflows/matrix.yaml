@@ -17,5 +17,5 @@ jobs:
     steps:
       - name: Run echo command
         run: |
-          echo "OS: {{matrix.os}}"
-          echo "OS: {{matrix.node}}"
+          echo "OS: ${{matrix.os}}"
+          echo "Node: ${{matrix.node}}"
