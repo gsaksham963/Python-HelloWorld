@@ -1,6 +1,9 @@
 name: Deploy to AWS
 
-on: [push]
+on: 
+  push:
+    branches:
+      - aws
 
 permissions:
   id-token: write
